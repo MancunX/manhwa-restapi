@@ -12,3 +12,13 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model Users {
+  id String @default(uuid()) @id
+
+  username String @unique
+  password String
+
+  createdAt DateTime
+  updatedAt DateTime @updatedAt
+}
