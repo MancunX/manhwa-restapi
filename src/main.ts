@@ -6,6 +6,7 @@ async function bootstrap() {
     cors: true,
   };
   const app = await NestFactory.create(AppModule, appOptions);
+  app.enableShutdownHooks();
   await app.listen(3000);
 }
 bootstrap();
