@@ -1,11 +1,22 @@
 import { UsersService } from './users.service';
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
 import { CreateUserRequest, UserResponse } from '../model/user.model';
 import { WebResponse } from 'src/model/web.model';
 
 @Controller('api/users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get()
+  @HttpCode(200)
+  async getAllUser(): Promise<WebResponse<UserResponse[]>> {
+    const users = await this.usersService.getAllUser();
+    return {
+      statusCode: 200,
+      success: true,
+      data: users,
+    };
+  }
 
   @Post()
   @HttpCode(201)

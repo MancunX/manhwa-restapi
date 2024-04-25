@@ -12,6 +12,17 @@ export class UsersService {
     private prisma: PrismaService,
   ) {}
 
+  async getAllUser(): Promise<UserResponse[]> {
+    const users = await this.prisma.users.findMany();
+    if (users.length === 0) throw new HttpException('User not found', 404);
+    return users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    }));
+  }
+
   async createUser(request: CreateUserRequest): Promise<UserResponse> {
     const createRequest: CreateUserRequest = this.validationService.validate(
       UserValidation.CREATE,
