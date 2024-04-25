@@ -19,6 +19,6 @@ model Users {
   username String @unique
   password String
 
-  createdAt DateTime
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
