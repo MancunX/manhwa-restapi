@@ -12,16 +12,26 @@ export class PrismaService
 {
   constructor() {
     super();
-    console.info('Create prisma service');
+    console.info('Creating Prisma service...');
   }
 
-  onModuleInit() {
-    console.info('Prisma connected');
-    this.$connect();
+  async onModuleInit() {
+    try {
+      await this.$connect();
+      console.info('Prisma connected');
+    } catch (error) {
+      console.error('Error connecting to Prisma:', error);
+      throw error; // Rethrow the error to propagate it
+    }
   }
 
-  onApplicationShutdown() {
-    console.info('Prisma disconnect');
-    this.$disconnect();
+  async onApplicationShutdown() {
+    try {
+      await this.$disconnect();
+      console.info('Prisma disconnected');
+    } catch (error) {
+      console.error('Error disconnecting from Prisma:', error);
+      throw error; // Rethrow the error to propagate it
+    }
   }
 }
