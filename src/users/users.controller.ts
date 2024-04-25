@@ -1,6 +1,19 @@
 import { UsersService } from './users.service';
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
-import { CreateUserRequest, UserResponse } from '../model/user.model';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
+import {
+  CreateUserRequest,
+  DeleteUserRequest,
+  UserResponse,
+} from '../model/user.model';
 import { WebResponse } from 'src/model/web.model';
 
 @Controller('api/users')
@@ -28,6 +41,22 @@ export class UsersController {
       statusCode: 201,
       success: true,
       data: result,
+    };
+  }
+
+  @Delete(':userId')
+  @HttpCode(200)
+  async deleteUser(
+    @Param('userId', ParseUUIDPipe) id: string,
+  ): Promise<WebResponse<DeleteUserRequest>> {
+    const request: DeleteUserRequest = {
+      userId: id,
+    };
+    await this.usersService.deleteUser(request);
+    return {
+      statusCode: 200,
+      success: true,
+      message: `User with ID ${request.userId} has been deleted successfully.`,
     };
   }
 }

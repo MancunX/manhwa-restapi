@@ -2,7 +2,11 @@ import { ValidationService } from './../validation/validation.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { CreateUserRequest, UserResponse } from 'src/model/user.model';
+import {
+  CreateUserRequest,
+  DeleteUserRequest,
+  UserResponse,
+} from 'src/model/user.model';
 import { UserValidation } from './user.validation';
 
 @Injectable()
@@ -48,5 +52,21 @@ export class UsersService {
       createdAt: newUser.createdAt,
       updatedAt: newUser.updatedAt,
     };
+  }
+
+  async deleteUser(request: DeleteUserRequest): Promise<void> {
+    const existingUser = await this.prisma.users.findUnique({
+      where: {
+        id: request.userId,
+      },
+    });
+    if (!existingUser)
+      throw new HttpException(`Id user ${existingUser.id} is not exist`, 400);
+
+    await this.prisma.users.delete({
+      where: {
+        id: existingUser.id,
+      },
+    });
   }
 }
