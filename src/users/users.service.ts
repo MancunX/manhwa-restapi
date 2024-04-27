@@ -27,6 +27,20 @@ export class UsersService {
     }));
   }
 
+  async getById(userId: string): Promise<UserResponse> {
+    const user = await this.prisma.users.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+    return {
+      id: user.id,
+      username: user.username,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+  }
+
   async createUser(request: CreateUserRequest): Promise<UserResponse> {
     const createRequest: CreateUserRequest = this.validationService.validate(
       UserValidation.CREATE,
