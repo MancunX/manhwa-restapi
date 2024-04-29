@@ -6,17 +6,19 @@ import {
   HttpException,
   Post,
   Req,
+  Request as NestReq,
   Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
+  AuthProfileResponse,
   RefreshTokenResponse,
   SignInRequest,
   SignInResponse,
 } from 'src/model/auth.model';
 import { WebResponse } from 'src/model/web.model';
 import { Public } from 'src/auth/decorator/public.decorator';
-import { Request, Response } from 'express';
+import { Response, Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
 
@@ -27,6 +29,18 @@ export class AuthController {
     private jwtService: JwtService,
     private usersService: UsersService,
   ) {}
+
+  @Get('profile')
+  @HttpCode(200)
+  async getProfile(@NestReq() req): Promise<WebResponse<AuthProfileResponse>> {
+    const user = req.user;
+    return {
+      data: {
+        id: user.sub,
+        username: user.username,
+      },
+    };
+  }
 
   @Public()
   @Post('signIn')
@@ -83,9 +97,9 @@ export class AuthController {
 
       res.cookie('access_token', newToken, {
         httpOnly: true,
-        secure: false, // Pertimbangkan untuk mengatur ini menjadi true jika Anda menggunakan HTTPS
+        secure: false,
         sameSite: 'none',
-        maxAge: 60 * 60 * 1000, // Consider increasing this value
+        maxAge: 60 * 60 * 1000,
       });
       return {
         message: 'New access token created',

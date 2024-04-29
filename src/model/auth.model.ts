@@ -11,3 +11,8 @@ export class SignInRequest {
 export class RefreshTokenResponse {
   access_token: string;
 }
+
+export class AuthProfileResponse {
+  id: string;
+  username: string;
+}
