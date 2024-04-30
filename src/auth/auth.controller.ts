@@ -21,8 +21,10 @@ import { Public } from 'src/auth/decorator/public.decorator';
 import { Response, Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('api/auth')
+@ApiTags('Authentication')
 export class AuthController {
   constructor(
     private authService: AuthService,

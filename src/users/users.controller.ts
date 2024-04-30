@@ -15,8 +15,10 @@ import {
   UserResponse,
 } from '../model/user.model';
 import { WebResponse } from 'src/model/web.model';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('api/users')
+@ApiTags('Users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
