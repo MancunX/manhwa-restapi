@@ -15,4 +15,5 @@ export class RefreshTokenResponse {
 export class AuthProfileResponse {
   id: string;
   username: string;
+  role: string;
 }
