@@ -8,6 +8,7 @@ import {
   Req,
   Request as NestReq,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
@@ -38,8 +39,9 @@ export class AuthController {
     const user = req.user;
     return {
       data: {
-        id: user.sub,
+        id: user.id,
         username: user.username,
+        role: user.role,
       },
     };
   }
@@ -70,11 +72,19 @@ export class AuthController {
     };
   }
 
+  @Public()
   @Post('signOut')
   @HttpCode(200)
   async signOut(
     @Res({ passthrough: true }) res: Response,
-  ): Promise<WebResponse<SignInResponse>> {
+    @Req() req: Request,
+  ): Promise<any> {
+    const accessToken = req.cookies['access_token'];
+    const refreshToken = req.cookies['refresh_token'];
+
+    if (!accessToken && !refreshToken) {
+      throw new UnauthorizedException();
+    }
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
     return {
