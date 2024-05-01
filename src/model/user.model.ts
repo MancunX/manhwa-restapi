@@ -1,6 +1,8 @@
 export class CreateUserRequest {
   username: string;
   password: string;
+  confirmPassword: string;
+  role: string;
 }
 
 export class DeleteUserRequest {
@@ -10,6 +12,7 @@ export class DeleteUserRequest {
 export class UserResponse {
   id: string;
   username: string;
+  role: string;
   createdAt: Date;
   updatedAt: Date;
 }
