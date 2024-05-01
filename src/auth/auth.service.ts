@@ -6,7 +6,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { jwtConstants } from './constants';
-import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class AuthService {
@@ -14,7 +13,6 @@ export class AuthService {
     private validationService: ValidationService,
     private prisma: PrismaService,
     private jwtService: JwtService,
-    private usersService: UsersService,
   ) {}
 
   async signIn(request: SignInRequest): Promise<any> {
@@ -41,13 +39,16 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new HttpException('Password is invalid', 401);
     }
-    const accessPayload = { sub: user.id, username: user.username };
+    const accessPayload = {
+      id: user.id,
+      role: user.role,
+    };
     const accessToken = this.jwtService.sign(accessPayload, {
       expiresIn: '1m',
       secret: jwtConstants.accessSecret,
     });
 
-    const refreshTokenPayload = { sub: user.id };
+    const refreshTokenPayload = { id: user.id };
     const refreshToken = this.jwtService.sign(refreshTokenPayload, {
       expiresIn: '7d',
       secret: jwtConstants.refreshSecret,
@@ -64,12 +65,16 @@ export class AuthService {
       const decoded = this.jwtService.verify(refreshToken, {
         secret: jwtConstants.refreshSecret,
       });
-      const user = await this.usersService.getById(decoded.sub);
+      const user = await this.prisma.users.findUnique({
+        where: {
+          id: decoded.id,
+        },
+      });
       if (!user) {
         throw new Error('User not found');
       }
 
-      const payload = { username: user.username, sub: user.id };
+      const payload = { id: user.id, role: user.role };
       const newAccessToken = this.jwtService.sign(payload, {
         secret: jwtConstants.accessSecret,
         expiresIn: '1h',
