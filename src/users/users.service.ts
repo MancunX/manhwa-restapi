@@ -22,23 +22,20 @@ export class UsersService {
     return users.map((user) => ({
       id: user.id,
       username: user.username,
+      role: user.role,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     }));
+    // return users;
   }
 
-  async getById(userId: string): Promise<UserResponse> {
+  async getById(id: string): Promise<UserResponse> {
     const user = await this.prisma.users.findUnique({
       where: {
-        id: userId,
+        id: id,
       },
     });
-    return {
-      id: user.id,
-      username: user.username,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    return user;
   }
 
   async createUser(request: CreateUserRequest): Promise<UserResponse> {
@@ -54,18 +51,21 @@ export class UsersService {
     if (existingUser) {
       throw new HttpException('Username already exist..!', 400);
     }
+    if (createRequest.password !== createRequest.confirmPassword) {
+      throw new HttpException(
+        'Password and confirmation password do not match',
+        400,
+      );
+    }
     createRequest.password = await bcrypt.hash(createRequest.password, 12);
     const newUser = await this.prisma.users.create({
       data: {
-        ...createRequest,
+        username: createRequest.username,
+        password: createRequest.password,
+        role: createRequest.role,
       },
     });
-    return {
-      id: newUser.id,
-      username: newUser.username,
-      createdAt: newUser.createdAt,
-      updatedAt: newUser.updatedAt,
-    };
+    return newUser;
   }
 
   async deleteUser(request: DeleteUserRequest): Promise<void> {
@@ -82,5 +82,14 @@ export class UsersService {
         id: existingUser.id,
       },
     });
+  }
+
+  async getUserRole(userId: string) {
+    const user = await this.prisma.users.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    return user?.role;
   }
 }
