@@ -13,11 +13,104 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRoles {
+  super
+  admin
+}
+
 model Users {
   id String @default(uuid()) @id
 
+  // image String?
+  // name String
   username String @unique
   password String
+  role String
+
+  comic Comics[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Genres {
+  id String @default(uuid()) @id
+
+  slug String @unique
+  name String
+
+  comic GenreOnComics[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ComicTypes {
+  id String @default(uuid()) @id
+
+  slug String @unique
+  name String
+  flag String
+
+  comic Comics[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ComicStatus {
+  ongoing
+  complete
+}
+
+model Comics {
+  id String @default(uuid()) @id
+
+  slug String @unique
+  name String
+  image String?
+  synopsis String
+  author String
+  artist String
+  release Int
+  status ComicStatus
+
+  genre GenreOnComics[]
+
+  comicTypeId  String
+  comicType ComicTypes @relation(fields: [comicTypeId], references: [id], onUpdate: Cascade, onDelete: NoAction)
+
+  chapter Chapters[]
+
+  userId String
+  user Users @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: NoAction)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Chapters {
+  id String @default(uuid()) @id
+
+  slug String @unique
+  name String
+  content String
+
+  comicId String
+  comic Comics @relation(fields: [comicId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GenreOnComics {
+  genreId String
+  genre Genres @relation(fields: [genreId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  comicId String
+  comic Comics @relation(fields: [comicId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@id([genreId, comicId])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
