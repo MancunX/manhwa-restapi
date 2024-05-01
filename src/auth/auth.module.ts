@@ -6,9 +6,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import { ValidationModule } from 'src/validation/validation.module';
 import { UsersModule } from 'src/users/users.module';
-import { JwtAccessStrategy } from './jwt-access.strategy';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { JwtRefreshStrategy } from './jwt-refresh.strategy';
+import { JwtAccessStrategy } from './strategy/jwt-access.strategy';
+import { JwtAuthGuard } from './guard/jwt-auth.guard';
+import { JwtRefreshStrategy } from './strategy/jwt-refresh.strategy';
+import { RolesGuard } from './guard/role.guard';
 
 @Module({
   imports: [
@@ -22,7 +23,13 @@ import { JwtRefreshStrategy } from './jwt-refresh.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAccessStrategy, JwtRefreshStrategy, JwtAuthGuard],
+  providers: [
+    AuthService,
+    JwtAccessStrategy,
+    JwtRefreshStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}
