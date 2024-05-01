@@ -16,12 +16,14 @@ import {
 } from '../model/user.model';
 import { WebResponse } from 'src/model/web.model';
 import { ApiTags } from '@nestjs/swagger';
+import { Roles } from 'src/auth/decorator/role.decorator';
 
 @Controller('api/users')
 @ApiTags('Users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Roles('super')
   @Get()
   @HttpCode(200)
   async getAllUser(): Promise<WebResponse<UserResponse[]>> {
