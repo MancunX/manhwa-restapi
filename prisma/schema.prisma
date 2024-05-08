@@ -50,7 +50,6 @@ model ComicTypes {
 
   slug String @unique
   name String
-  flag String
 
   comic Comics[]
 
@@ -72,7 +71,7 @@ model Comics {
   synopsis String
   author String
   artist String
-  release Int
+  release String
   status ComicStatus
 
   genre GenreOnComics[]
