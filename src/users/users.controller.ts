@@ -1,66 +1,96 @@
-import { UsersService } from './users.service';
 import {
-  Body,
   Controller,
-  Delete,
   Get,
-  HttpCode,
-  Param,
-  ParseUUIDPipe,
   Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpCode,
 } from '@nestjs/common';
-import {
-  CreateUserRequest,
-  DeleteUserRequest,
-  UserResponse,
-} from '../model/user.model';
-import { WebResponse } from 'src/model/web.model';
+import { UsersService } from './users.service';
 import { ApiTags } from '@nestjs/swagger';
+import {
+  UserCreateRequest,
+  UserResponse,
+  UserUpdateRequest,
+} from 'src/model/user.model';
+import { WebResponse } from 'src/model/web.model';
+import { Public } from 'src/auth/decorator/public.decorator';
 import { Roles } from 'src/auth/decorator/role.decorator';
 
-@Controller('api/users')
+@Roles('super')
+@Controller('users')
 @ApiTags('Users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Roles('super')
-  @Get()
-  @HttpCode(200)
-  async getAllUser(): Promise<WebResponse<UserResponse[]>> {
-    const users = await this.usersService.getAllUser();
+  @Post()
+  @HttpCode(201)
+  async create(
+    @Body() userCreate: UserCreateRequest,
+  ): Promise<WebResponse<UserResponse>> {
+    const result = await this.usersService.create(userCreate);
     return {
-      statusCode: 200,
+      // statusCode: 201,
       success: true,
-      data: users,
+      message: `Create user ${result.name} has been success.`,
+      data: result,
     };
   }
 
-  @Post()
-  @HttpCode(201)
-  async createUser(
-    @Body() request: CreateUserRequest,
-  ): Promise<WebResponse<UserResponse>> {
-    const result = await this.usersService.createUser(request);
+  @Public()
+  @Get()
+  @HttpCode(200)
+  async findAll(): Promise<WebResponse<UserResponse[]>> {
+    const result = await this.usersService.findAll();
     return {
-      statusCode: 201,
+      // statusCode: 200,
       success: true,
       data: result,
     };
   }
 
-  @Delete(':userId')
+  @Get(':username')
   @HttpCode(200)
-  async deleteUser(
-    @Param('userId', ParseUUIDPipe) id: string,
-  ): Promise<WebResponse<DeleteUserRequest>> {
-    const request: DeleteUserRequest = {
-      userId: id,
-    };
-    await this.usersService.deleteUser(request);
+  async findOne(
+    @Param('username') username: string,
+  ): Promise<WebResponse<UserResponse>> {
+    const result = await this.usersService.findOne(username);
     return {
-      statusCode: 200,
+      // statusCode: 200,
       success: true,
-      message: `User with ID ${request.userId} has been deleted successfully.`,
+      data: result,
+    };
+  }
+
+  @Patch(':username')
+  @HttpCode(201)
+  async update(
+    @Param('username') username: string,
+    @Body() userUpdate: UserUpdateRequest,
+  ): Promise<WebResponse<UserResponse>> {
+    const result = await this.usersService.update({ username, ...userUpdate });
+    return {
+      // statusCode: 201,
+      success: true,
+      message: `Update user ${result.name} role to ${result.role} has been success.`,
+      data: result,
+    };
+  }
+
+  @Delete(':username')
+  @HttpCode(200)
+  // @Timeout(30000)
+  async remove(
+    @Param('username') username: string,
+  ): Promise<WebResponse<UserResponse>> {
+    const result = await this.usersService.remove(username);
+    return {
+      // statusCode: 200,
+      success: true,
+      message: `Delete user ${result.name} has been success.`,
+      data: result,
     };
   }
 }
