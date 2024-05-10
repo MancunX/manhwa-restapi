@@ -1,95 +1,235 @@
-import { ValidationService } from './../validation/validation.service';
-import { HttpException, Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
 import {
-  CreateUserRequest,
-  DeleteUserRequest,
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  RequestTimeoutException,
+} from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { ValidationService } from 'src/validation/validation.service';
+import {
+  UserCreateRequest,
   UserResponse,
+  UserUpdateRequest,
 } from 'src/model/user.model';
-import { UserValidation } from './user.validation';
+import { UsersValidation } from './users.validation';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   constructor(
-    private validationService: ValidationService,
     private prisma: PrismaService,
+    private validation: ValidationService,
   ) {}
-
-  async getAllUser(): Promise<UserResponse[]> {
-    const users = await this.prisma.users.findMany();
-    if (users.length === 0) throw new HttpException('User not found', 404);
-    return users.map((user) => ({
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    }));
-    // return users;
-  }
-
-  async getById(id: string): Promise<UserResponse> {
-    const user = await this.prisma.users.findUnique({
-      where: {
-        id: id,
-      },
-    });
-    return user;
-  }
-
-  async createUser(request: CreateUserRequest): Promise<UserResponse> {
-    const createRequest: CreateUserRequest = this.validationService.validate(
-      UserValidation.CREATE,
-      request,
+  async create(userCreate: UserCreateRequest): Promise<UserResponse> {
+    const createRequest: UserCreateRequest = await this.validation.validate(
+      UsersValidation.CREATE,
+      userCreate,
     );
-    const existingUser = await this.prisma.users.findUnique({
+
+    const userWithSameUsername = await this.prisma.users.findFirst({
       where: {
-        username: createRequest.username,
+        OR: [
+          {
+            username: createRequest.username,
+          },
+          {
+            email: createRequest.email,
+          },
+        ],
       },
     });
-    if (existingUser) {
-      throw new HttpException('Username already exist..!', 400);
+
+    if (userWithSameUsername) {
+      if (userWithSameUsername.username === createRequest.username) {
+        throw new BadRequestException(
+          `Username ${createRequest.username} already exists.`,
+        );
+      }
+      if (userWithSameUsername.email === createRequest.email) {
+        throw new BadRequestException(
+          `Email ${createRequest.email} already exists`,
+        );
+      }
     }
-    if (createRequest.password !== createRequest.confirmPassword) {
-      throw new HttpException(
-        'Password and confirmation password do not match',
-        400,
-      );
+
+    try {
+      if (createRequest.password !== createRequest.confirmPassword) {
+        throw new BadRequestException(
+          'Password and confirmation password do not match',
+        );
+      }
+      const hashPassword = await bcrypt.hash(createRequest.password, 12);
+      const user = await this.prisma.users.create({
+        data: {
+          name: createRequest.name,
+          email: createRequest.email,
+          username: createRequest.username,
+          password: hashPassword,
+          role: createRequest.role,
+        },
+      });
+      const timeoutPromise = new Promise<UserResponse>((resolve, reject) => {
+        setTimeout(() => {
+          reject(new RequestTimeoutException('Request timeout'));
+        }, 30000);
+      });
+      return Promise.race([user, timeoutPromise]);
+    } catch (err: any) {
+      if (err instanceof BadRequestException) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: err.message,
+            error: 'Bad Request',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      if (err instanceof RequestTimeoutException) {
+        throw err;
+      }
+      throw new InternalServerErrorException();
     }
-    createRequest.password = await bcrypt.hash(createRequest.password, 12);
-    const newUser = await this.prisma.users.create({
-      data: {
-        username: createRequest.username,
-        password: createRequest.password,
-        role: createRequest.role,
-      },
-    });
-    return newUser;
   }
 
-  async deleteUser(request: DeleteUserRequest): Promise<void> {
-    const existingUser = await this.prisma.users.findUnique({
-      where: {
-        id: request.userId,
-      },
-    });
-    if (!existingUser)
-      throw new HttpException(`Id user ${existingUser.id} is not exist`, 400);
-
-    await this.prisma.users.delete({
-      where: {
-        id: existingUser.id,
-      },
-    });
+  async findAll(): Promise<UserResponse[]> {
+    try {
+      const user = await this.prisma.users.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      const timeoutPromise = new Promise<UserResponse[]>((resolve, reject) => {
+        setTimeout(() => {
+          reject(new RequestTimeoutException('Request timeout'));
+        }, 30000);
+      });
+      return Promise.race([user, timeoutPromise]);
+    } catch (err: any) {
+      if (err instanceof RequestTimeoutException) {
+        throw err;
+      }
+      throw new InternalServerErrorException();
+    }
   }
 
-  async getUserRole(userId: string) {
+  async findOne(username: string): Promise<UserResponse> {
+    try {
+      const user = await this.prisma.users.findUnique({
+        where: {
+          username: username,
+        },
+      });
+      if (!user)
+        throw new NotFoundException(`Username ${user.username} not found`);
+      const timeoutPromise = new Promise<UserResponse>((resolve, reject) => {
+        setTimeout(() => {
+          reject(new RequestTimeoutException('Request timeout'));
+        }, 30000);
+      });
+      return Promise.race([user, timeoutPromise]);
+    } catch (err: any) {
+      if (err instanceof NotFoundException) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.NOT_FOUND,
+            message: err.message,
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      if (err instanceof RequestTimeoutException) {
+        throw err;
+      }
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async update(userUpdate: UserUpdateRequest): Promise<UserResponse> {
+    const updateRequest: UserUpdateRequest = await this.validation.validate(
+      UsersValidation.UPDATE,
+      userUpdate,
+    );
+    let user = await this.prisma.users.findUnique({
+      where: {
+        username: updateRequest.username,
+      },
+    });
+    if (!user)
+      throw new NotFoundException(`Username ${user.username} not found`);
+    try {
+      user = await this.prisma.users.update({
+        where: {
+          username: userUpdate.username,
+        },
+        data: {
+          role: userUpdate.role,
+        },
+      });
+      const timeoutPromise = new Promise<UserResponse>((resolve, reject) => {
+        setTimeout(() => {
+          reject(new RequestTimeoutException('Request timeout'));
+        }, 30000);
+      });
+      return Promise.race([user, timeoutPromise]);
+    } catch (err: any) {
+      if (err instanceof NotFoundException) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.NOT_FOUND,
+            message: err.message,
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      if (err instanceof RequestTimeoutException) {
+        throw err;
+      }
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async remove(username: string): Promise<UserResponse> {
     const user = await this.prisma.users.findUnique({
-      where: { id: userId },
-      select: { role: true },
+      where: {
+        username: username,
+      },
     });
-
-    return user?.role;
+    if (!user) throw new NotFoundException(`Username ${username} not found`);
+    try {
+      await this.prisma.users.delete({
+        where: {
+          username: user.username,
+        },
+      });
+      const timeoutPromise = new Promise<UserResponse>((resolve, reject) => {
+        setTimeout(() => {
+          reject(new RequestTimeoutException('Request timeout'));
+        }, 30000);
+      });
+      return Promise.race([user, timeoutPromise]);
+    } catch (err: any) {
+      if (err instanceof NotFoundException) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.NOT_FOUND,
+            message: err.message,
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      if (err instanceof RequestTimeoutException) {
+        throw err;
+      }
+      throw new InternalServerErrorException();
+    }
   }
 }
