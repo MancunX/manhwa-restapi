@@ -8,8 +8,14 @@ import { AuthModule } from './auth/auth.module';
 import { ComicsModule } from './comics/comics.module';
 import { GenresModule } from './genres/genres.module';
 import { ComicTypesModule } from './comic-types/comic-types.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
+import { RolesGuard } from './auth/guard/role.guard';
+
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     PrismaModule,
     ValidationModule,
     UsersModule,
@@ -19,6 +25,16 @@ import { ComicTypesModule } from './comic-types/comic-types.module';
     ComicTypesModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}
