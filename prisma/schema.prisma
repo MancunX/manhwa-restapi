@@ -28,6 +28,7 @@ model Users {
   password String
   role String
   isOnline Boolean @default(false)
+  refreshToken String? @unique
 
   comic Comics[]
 
