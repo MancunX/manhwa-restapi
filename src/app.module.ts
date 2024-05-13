@@ -9,14 +9,18 @@ import { ComicsModule } from './comics/comics.module';
 import { GenresModule } from './genres/genres.module';
 import { ComicTypesModule } from './comic-types/comic-types.module';
 import { ChaptersModule } from './chapters/chapters.module';
-import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 import { RolesGuard } from './auth/guard/role.guard';
+import { JwtModule } from '@nestjs/jwt';
+import { jwtConstants } from './auth/constants';
 
 @Module({
   imports: [
-    ScheduleModule.forRoot(),
+    JwtModule.register({
+      global: true,
+      secret: jwtConstants.ACCESS_SECRET_KEY,
+    }),
     PrismaModule,
     ValidationModule,
     UsersModule,
