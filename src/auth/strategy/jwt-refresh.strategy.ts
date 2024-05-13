@@ -11,13 +11,11 @@ export class JwtRefreshStrategy extends PassportStrategy(
 ) {
   constructor() {
     super({
-      // jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       jwtFromRequest: ExtractJwt.fromExtractors([
         JwtRefreshStrategy.extractJWTFromCookie,
       ]),
       ignoreExpiration: false,
-      secretOrKey: jwtConstants.refreshSecret,
-      // passReqToCallback: true,
+      secretOrKey: jwtConstants.REFRESH_SECRET_KEY,
     });
   }
 
