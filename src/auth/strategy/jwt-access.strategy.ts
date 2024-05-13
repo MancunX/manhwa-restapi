@@ -8,12 +8,11 @@ import { Request } from 'express';
 export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor() {
     super({
-      // jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       jwtFromRequest: ExtractJwt.fromExtractors([
         JwtAccessStrategy.extractJWTFromCookie,
       ]),
       ignoreExpiration: false,
-      secretOrKey: jwtConstants.accessSecret,
+      secretOrKey: jwtConstants.ACCESS_SECRET_KEY,
     });
   }
 
