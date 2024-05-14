@@ -5,7 +5,6 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  RequestTimeoutException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ValidationService } from 'src/validation/validation.service';
@@ -23,6 +22,7 @@ export class UsersService {
     private prisma: PrismaService,
     private validation: ValidationService,
   ) {}
+
   async create(userCreate: UserCreateRequest): Promise<UserResponse> {
     const createRequest: UserCreateRequest = await this.validation.validate(
       UsersValidation.CREATE,
@@ -71,12 +71,7 @@ export class UsersService {
           role: createRequest.role,
         },
       });
-      const timeoutPromise = new Promise<UserResponse>((resolve, reject) => {
-        setTimeout(() => {
-          reject(new RequestTimeoutException('Request timeout'));
-        }, 30000);
-      });
-      return Promise.race([user, timeoutPromise]);
+      return user;
     } catch (err: any) {
       if (err instanceof BadRequestException) {
         throw new HttpException(
@@ -88,16 +83,13 @@ export class UsersService {
           HttpStatus.BAD_REQUEST,
         );
       }
-      if (err instanceof RequestTimeoutException) {
-        throw err;
-      }
       throw new InternalServerErrorException();
     }
   }
 
   async findAll(): Promise<UserResponse[]> {
     try {
-      const user = await this.prisma.users.findMany({
+      const users = await this.prisma.users.findMany({
         select: {
           id: true,
           name: true,
@@ -107,16 +99,8 @@ export class UsersService {
           updatedAt: true,
         },
       });
-      const timeoutPromise = new Promise<UserResponse[]>((resolve, reject) => {
-        setTimeout(() => {
-          reject(new RequestTimeoutException('Request timeout'));
-        }, 30000);
-      });
-      return Promise.race([user, timeoutPromise]);
+      return users;
     } catch (err: any) {
-      if (err instanceof RequestTimeoutException) {
-        throw err;
-      }
       throw new InternalServerErrorException();
     }
   }
@@ -130,12 +114,7 @@ export class UsersService {
       });
       if (!user)
         throw new NotFoundException(`Username ${user.username} not found`);
-      const timeoutPromise = new Promise<UserResponse>((resolve, reject) => {
-        setTimeout(() => {
-          reject(new RequestTimeoutException('Request timeout'));
-        }, 30000);
-      });
-      return Promise.race([user, timeoutPromise]);
+      return user;
     } catch (err: any) {
       if (err instanceof NotFoundException) {
         throw new HttpException(
@@ -145,9 +124,6 @@ export class UsersService {
           },
           HttpStatus.NOT_FOUND,
         );
-      }
-      if (err instanceof RequestTimeoutException) {
-        throw err;
       }
       throw new InternalServerErrorException();
     }
@@ -174,12 +150,7 @@ export class UsersService {
           role: userUpdate.role,
         },
       });
-      const timeoutPromise = new Promise<UserResponse>((resolve, reject) => {
-        setTimeout(() => {
-          reject(new RequestTimeoutException('Request timeout'));
-        }, 30000);
-      });
-      return Promise.race([user, timeoutPromise]);
+      return user;
     } catch (err: any) {
       if (err instanceof NotFoundException) {
         throw new HttpException(
@@ -189,9 +160,6 @@ export class UsersService {
           },
           HttpStatus.NOT_FOUND,
         );
-      }
-      if (err instanceof RequestTimeoutException) {
-        throw err;
       }
       throw new InternalServerErrorException();
     }
@@ -210,12 +178,7 @@ export class UsersService {
           username: user.username,
         },
       });
-      const timeoutPromise = new Promise<UserResponse>((resolve, reject) => {
-        setTimeout(() => {
-          reject(new RequestTimeoutException('Request timeout'));
-        }, 30000);
-      });
-      return Promise.race([user, timeoutPromise]);
+      return user;
     } catch (err: any) {
       if (err instanceof NotFoundException) {
         throw new HttpException(
@@ -225,9 +188,6 @@ export class UsersService {
           },
           HttpStatus.NOT_FOUND,
         );
-      }
-      if (err instanceof RequestTimeoutException) {
-        throw err;
       }
       throw new InternalServerErrorException();
     }

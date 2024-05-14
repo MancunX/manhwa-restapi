@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -14,6 +14,7 @@ import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 import { RolesGuard } from './auth/guard/role.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './auth/constants';
+import { TimeoutMiddleware } from './middleware/timeout.middleware';
 
 @Module({
   imports: [
@@ -43,4 +44,8 @@ import { jwtConstants } from './auth/constants';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TimeoutMiddleware).forRoutes('*');
+  }
+}
